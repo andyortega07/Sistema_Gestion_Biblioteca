@@ -41,6 +41,9 @@ class Biblioteca {
     private usuarios: Usuario[] = [];
     private prestamos: Prestamo[] = [];
 
+      //Gestion de libros
+
+
     agregarLibro(libro: Libro): void {
         this.libros.push(libro);
         console.log("Libro agregado correctamente");
@@ -67,6 +70,46 @@ class Biblioteca {
         );
     }
 
+    consultarLibro(id: string): void {
+
+        const libro = this.buscarLibro(id);
+
+        if (libro) {
+            console.log(libro);
+        } else {
+            console.log("Libro no encontrado");
+        }
+    }
+
+    verificarDisponibilidad(libroId: string): boolean {
+
+        const libro = this.buscarLibro(libroId);
+
+        if (!libro) {
+            console.log("Libro no encontrado");
+            return false;
+        }
+
+        return libro.disponible;
+    }
+
+    actualizarDisponibilidad(
+        libroId: string,
+        estado: boolean
+    ): void {
+
+        const libro = this.buscarLibro(libroId);
+
+        if (!libro) {
+            console.log("Libro no encontrado");
+            return;
+        }
+
+        libro.disponible = estado;
+
+        console.log("Disponibilidad actualizada");
+    }
+
     listarLibros(): void {
 
         console.log("===== LISTA DE LIBROS =====");
@@ -85,6 +128,55 @@ Disponible: ${libro.disponible}
         });
     }
 
+    //Buscar libros 
+
+    buscarLibroPorTitulo(
+        titulo: string
+    ): Libro[] {
+
+        return this.libros.filter(
+            libro =>
+                libro.titulo
+                    .toLowerCase()
+                    .includes(titulo.toLowerCase())
+        );
+    }
+
+    buscarLibroPorAutor(
+        autor: string
+    ): Libro[] {
+
+        return this.libros.filter(
+            libro =>
+                libro.autor
+                    .toLowerCase()
+                    .includes(autor.toLowerCase())
+        );
+    }
+
+    mostrarLibros(
+        libros: Libro[]
+    ): void {
+
+        if (libros.length === 0) {
+            console.log("No se encontraron libros");
+            return;
+        }
+
+        libros.forEach(libro => {
+
+            console.log(`
+ID: ${libro.id}
+Título: ${libro.titulo}
+Autor: ${libro.autor}
+Disponible: ${libro.disponible}
+            `);
+
+        });
+    }
+
+    //Gestion de usuarios
+
     registrarUsuario(usuario: Usuario): void {
 
         this.usuarios.push(usuario);
@@ -96,6 +188,25 @@ Disponible: ${libro.disponible}
 
         return this.usuarios.find(
             usuario => usuario.id === id
+        );
+    }
+
+    validarUsuario(id: string): boolean {
+
+        return this.usuarios.some(
+            usuario => usuario.id === id
+        );
+    }
+
+    buscarUsuarioPorNombre(
+        nombre: string
+    ): Usuario[] {
+
+        return this.usuarios.filter(
+            usuario =>
+                usuario.nombre
+                    .toLowerCase()
+                    .includes(nombre.toLowerCase())
         );
     }
 
@@ -115,6 +226,28 @@ Dirección: ${usuario.direccion}
 
         });
     }
+
+    mostrarUsuarios(
+        usuarios: Usuario[]
+    ): void {
+
+        if (usuarios.length === 0) {
+            console.log("No se encontraron usuarios");
+            return;
+        }
+
+        usuarios.forEach(usuario => {
+
+            console.log(`
+ID: ${usuario.id}
+Nombre: ${usuario.nombre}
+Correo: ${usuario.correo}
+            `);
+
+        });
+    }
+
+    //Gestión de préstamos
 
     prestarLibro(
         libroId: string,
@@ -155,28 +288,7 @@ Dirección: ${usuario.direccion}
         console.log("Préstamo realizado correctamente");
     }
 
-    devolverLibro(libroId: string): void {
-
-        const prestamo = this.prestamos.find(
-            p => p.libroId === libroId && p.fechaDevolucion === null
-        );
-
-        if (!prestamo) {
-            console.log("No existe préstamo activo");
-            return;
-        }
-
-        prestamo.fechaDevolucion = new Date().toLocaleDateString();
-
-        const libro = this.buscarLibro(libroId);
-
-        if (libro) {
-            libro.disponible = true;
-        }
-
-        console.log("Libro devuelto correctamente");
-    }
-
+    
     listarPrestamos(): void {
 
         console.log("===== LISTA DE PRÉSTAMOS =====");
@@ -193,7 +305,43 @@ Fecha Devolución: ${prestamo.fechaDevolucion}
 
         });
     }
+
+    //Gestión de devoluciones
+
+    buscarPrestamoActivo(
+        libroId: string
+    ): Prestamo | undefined {
+
+        return this.prestamos.find(
+            prestamo =>
+                prestamo.libroId === libroId &&
+                prestamo.fechaDevolucion === null
+        );
+    }
+
+    devolverLibro(libroId: string): void {
+
+        const prestamo =
+            this.buscarPrestamoActivo(libroId);
+
+        if (!prestamo) {
+            console.log("No existe préstamo activo");
+            return;
+        }
+
+        prestamo.fechaDevolucion =
+            new Date().toLocaleDateString();
+
+        const libro = this.buscarLibro(libroId);
+
+        if (libro) {
+            libro.disponible = true;
+        }
+
+        console.log("Libro devuelto correctamente");
+    }
 }
+
 
 const sub1: SubCategoria = {
     id: "S1",
@@ -261,11 +409,41 @@ biblioteca.registrarUsuario(usuario1);
 biblioteca.registrarUsuario(usuario2);
 biblioteca.listarLibros();
 biblioteca.listarUsuarios();
+console.log("Disponibilidad L1:");
+console.log(
+    biblioteca.verificarDisponibilidad("L1")
+);
 biblioteca.prestarLibro(
     "L1",
     "U1",
     "29/05/2026"
 );
 biblioteca.listarPrestamos();
+console.log("Disponibilidad después del préstamo:");
+console.log(
+    biblioteca.verificarDisponibilidad("L1")
+);
+console.log("Buscar libro por título:");
+biblioteca.mostrarLibros(
+    biblioteca.buscarLibroPorTitulo("TypeScript")
+);
+console.log("Buscar libro por autor:");
+biblioteca.mostrarLibros(
+    biblioteca.buscarLibroPorAutor("Juan")
+);
+console.log("Buscar usuario por nombre:");
+biblioteca.mostrarUsuarios(
+    biblioteca.buscarUsuarioPorNombre("Andy")
+);
+console.log("Validar usuario:");
+console.log(
+    biblioteca.validarUsuario("U1")
+);
+biblioteca.consultarLibro("L1");
 biblioteca.devolverLibro("L1");
+biblioteca.listarPrestamos();
+console.log("Disponibilidad después de devolución:");
+console.log(
+    biblioteca.verificarDisponibilidad("L1")
+);
 biblioteca.listarLibros();
